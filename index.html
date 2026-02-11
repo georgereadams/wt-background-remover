@@ -397,8 +397,6 @@
   const imageGrid = document.getElementById('imageGrid');
   const downloadAllBtn = document.getElementById('downloadAllBtn');
   const clearBtn = document.getElementById('clearBtn');
-  const progressWrap = document.getElementById('progressWrap');
-  const progressFill = document.getElementById('progressFill');
 
   // Color swatches
   document.querySelectorAll('.color-swatch').forEach(swatch => {
@@ -565,15 +563,7 @@
   }
 
   function updateProgress() {
-    const total = images.length;
-    const done = images.filter(i => i.status === 'done' || i.status === 'error').length;
-    const processing = images.some(i => i.status === 'processing');
-    if (total === 0 || (!processing && done === total)) {
-      progressWrap.classList.remove('visible');
-      return;
-    }
-    progressWrap.classList.add('visible');
-    progressFill.style.width = `${Math.round((done / total) * 100)}%`;
+    // progress bar removed - no op
   }
 
   downloadAllBtn.addEventListener('click', () => {
