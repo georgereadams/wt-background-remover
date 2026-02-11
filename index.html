@@ -384,12 +384,12 @@
 
 
 
-<script>
+<script type="module">
+  import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm';
+
   // State
-  let images = []; // { id, file, name, originalUrl, processedUrl, status, bgColor }
+  let images = [];
   let selectedBg = '#E9E9E9';
-  let apiKey = 'YOUR_NEW_API_KEY_HERE';
-  let pendingFiles = [];
 
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
@@ -405,9 +405,8 @@
       document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
       swatch.classList.add('active');
       selectedBg = swatch.dataset.color;
-      // Re-render all processed images with new bg
       images.forEach(img => {
-        if (img.status === 'done' && img.processedCanvas) {
+        if (img.status === 'done' && img.bitmap) {
           applyBackground(img);
           updateCard(img);
         }
@@ -438,42 +437,28 @@
   function addImage(file) {
     const id = Math.random().toString(36).slice(2);
     const originalUrl = URL.createObjectURL(file);
-    const img = { id, file, name: file.name, originalUrl, processedUrl: null, processedCanvas: null, status: 'queued' };
+    const img = { id, file, name: file.name, originalUrl, processedUrl: null, processedCanvas: null, bitmap: null, status: 'queued' };
     images.push(img);
     renderCard(img);
     processImage(img);
   }
 
   function hideDropzone() {
-    if (images.length > 0) {
-      dropzone.style.display = 'none';
-    }
+    if (images.length > 0) dropzone.style.display = 'none';
   }
 
-  // Process with remove.bg
   async function processImage(img) {
     img.status = 'processing';
     updateCard(img);
     updateProgress();
 
     try {
-      const formData = new FormData();
-      formData.append('image_file', img.file);
-      formData.append('size', 'auto');
-
-      const res = await fetch('https://proud-glitter-441c.georgereadams.workers.dev', {
-        method: 'POST',
-        headers: { 'X-Api-Key': apiKey },
-        body: formData
+      const blob = await removeBackground(img.file, {
+        progress: (key, current, total) => {
+          // optional: could show model loading progress
+        }
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.errors?.[0]?.title || `Error ${res.status}`);
-      }
-
-      const blob = await res.blob();
-      // Load the PNG onto a canvas so we can apply background color
       const bitmap = await createImageBitmap(blob);
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -498,26 +483,22 @@
     const canvas = img.processedCanvas;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (selectedBg !== 'transparent') {
       ctx.fillStyle = selectedBg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-
     ctx.drawImage(img.bitmap, 0, 0);
     img.processedUrl = canvas.toDataURL('image/png');
   }
 
-  // Render a card
   function renderCard(img) {
     const card = document.createElement('div');
     card.className = 'image-card';
     card.id = `card-${img.id}`;
-
     card.innerHTML = `
       <img src="${img.originalUrl}" alt="${img.name}" />
       <div class="processing-overlay" id="overlay-${img.id}"><div class="spinner"></div></div>
-      <button class="remove-card" onclick="removeImage('${img.id}')">✕</button>
+      <button class="remove-card" onclick="window._removeImage('${img.id}')">✕</button>
       <div class="card-footer">
         <span class="card-name">${img.name}</span>
         <span class="card-status status-queued" id="status-${img.id}">Queued</span>
@@ -528,14 +509,12 @@
         </button>
       </div>
     `;
-
     imageGrid.appendChild(card);
   }
 
   function updateCard(img) {
     const card = document.getElementById(`card-${img.id}`);
     if (!card) return;
-
     const imgEl = card.querySelector('img');
     const overlay = document.getElementById(`overlay-${img.id}`);
     const statusEl = document.getElementById(`status-${img.id}`);
@@ -563,16 +542,14 @@
     }
   }
 
-  function removeImage(id) {
+  window._removeImage = function(id) {
     images = images.filter(i => i.id !== id);
     const card = document.getElementById(`card-${id}`);
     if (card) card.remove();
-    if (images.length === 0) {
-      dropzone.style.display = 'flex';
-    }
+    if (images.length === 0) dropzone.style.display = 'flex';
     updateDownloadBtn();
     updateProgress();
-  }
+  };
 
   function downloadImage(img) {
     if (!img.processedUrl) return;
@@ -583,49 +560,27 @@
   }
 
   function updateDownloadBtn() {
-    const hasDone = images.some(i => i.status === 'done');
-    downloadAllBtn.disabled = !hasDone;
+    downloadAllBtn.disabled = !images.some(i => i.status === 'done');
   }
 
   function updateProgress() {
     const total = images.length;
     const done = images.filter(i => i.status === 'done' || i.status === 'error').length;
     const processing = images.some(i => i.status === 'processing');
-
     if (total === 0 || (!processing && done === total)) {
       progressWrap.classList.remove('visible');
       return;
     }
-
     progressWrap.classList.add('visible');
     progressFill.style.width = `${Math.round((done / total) * 100)}%`;
   }
 
-  // Download all
-  downloadAllBtn.addEventListener('click', async () => {
-    const done = images.filter(i => i.status === 'done');
-    if (done.length === 1) {
-      downloadImage(done[0]);
-      return;
-    }
-
-    // Multiple: use JSZip if available, else download one by one
-    try {
-      const JSZip = await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js').catch(() => null);
-      if (!JSZip) throw new Error('no jszip');
-
-      // fallback to sequential download
-      done.forEach((img, i) => {
-        setTimeout(() => downloadImage(img), i * 300);
-      });
-    } catch {
-      done.forEach((img, i) => {
-        setTimeout(() => downloadImage(img), i * 300);
-      });
-    }
+  downloadAllBtn.addEventListener('click', () => {
+    images.filter(i => i.status === 'done').forEach((img, i) => {
+      setTimeout(() => downloadImage(img), i * 300);
+    });
   });
 
-  // Clear
   clearBtn.addEventListener('click', () => {
     images = [];
     imageGrid.innerHTML = '';
@@ -633,8 +588,6 @@
     updateDownloadBtn();
     progressWrap.classList.remove('visible');
   });
-
-  // Click notice removed - API key is hardcoded
 </script>
 
 </body>
