@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Background Remover</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -36,9 +36,9 @@
     }
 
     header h1 {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Archivo', sans-serif;
       font-size: 28px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: -0.5px;
       color: var(--text);
     }
@@ -101,12 +101,14 @@
     .image-grid {
       width: 100%;
       max-width: 900px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 12px;
     }
 
     .image-card {
+      width: 180px;
       border-radius: 4px;
       overflow: hidden;
       position: relative;
@@ -351,10 +353,7 @@
       </div>
     </div>
 
-    <!-- Progress bar -->
-    <div class="progress-bar-wrap" id="progressWrap">
-      <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
+
 
     <!-- Image Grid -->
     <div class="image-grid" id="imageGrid"></div>
