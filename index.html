@@ -388,7 +388,7 @@
   // State
   let images = []; // { id, file, name, originalUrl, processedUrl, status, bgColor }
   let selectedBg = '#E9E9E9';
-  let apiKey = 'AvZLMKwAbNXKimRfrvXFr5e6';
+  let apiKey = 'YOUR_NEW_API_KEY_HERE';
   let pendingFiles = [];
 
   const dropzone = document.getElementById('dropzone');
@@ -461,7 +461,7 @@
       formData.append('image_file', img.file);
       formData.append('size', 'auto');
 
-      const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.remove.bg/v1.0/removebg'), {
         method: 'POST',
         headers: { 'X-Api-Key': apiKey },
         body: formData
