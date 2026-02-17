@@ -560,9 +560,9 @@
     
     ctx.putImageData(imageData, 0, 0);
     
-    // Apply #D4CCB9 overlay with multiply blend at 20% opacity
+    // Apply #D4CCB9 overlay with multiply blend at 40% opacity
     ctx.globalCompositeOperation = 'multiply';
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = 0.4;
     ctx.fillStyle = '#D4CCB9';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1.0;
