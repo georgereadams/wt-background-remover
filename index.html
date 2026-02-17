@@ -500,9 +500,8 @@
       // Convert to grayscale using luminosity method
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       
-      // Apply high contrast curve (similar to reference image)
-      // Boost contrast by expanding midtones
-      const contrast = 1.4; // increase contrast
+      // Apply subtle contrast boost (much gentler than before)
+      const contrast = 1.15; // reduced from 1.4 to 1.15
       const adjusted = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
       const final = Math.max(0, Math.min(255, adjusted));
       
@@ -514,10 +513,12 @@
     
     ctx.putImageData(imageData, 0, 0);
     
-    // Apply #D4CCB9 overlay with "plus darker" blend (darken blend mode approximation)
+    // Apply #D4CCB9 overlay with "plus darker" blend at 10% opacity
     ctx.globalCompositeOperation = 'darken';
+    ctx.globalAlpha = 0.1;
     ctx.fillStyle = '#D4CCB9';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
     ctx.globalCompositeOperation = 'source-over';
     
     img.processedUrl = canvas.toDataURL('image/png');
