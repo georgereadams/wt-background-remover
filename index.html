@@ -462,8 +462,55 @@
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
       canvas.height = bitmap.height;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw the removed background image
+      ctx.drawImage(bitmap, 0, 0);
+      
+      // Get image data to erode the alpha channel (removes white glow)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const w = canvas.width;
+      const h = canvas.height;
+      
+      // Create a copy of alpha channel
+      const alphaData = new Uint8ClampedArray(w * h);
+      for (let i = 0; i < data.length; i += 4) {
+        alphaData[i / 4] = data[i + 3];
+      }
+      
+      // Erode alpha channel by 1-2 pixels to remove edge glow
+      const erosionRadius = 2;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = y * w + x;
+          let minAlpha = alphaData[idx];
+          
+          // Check surrounding pixels
+          for (let dy = -erosionRadius; dy <= erosionRadius; dy++) {
+            for (let dx = -erosionRadius; dx <= erosionRadius; dx++) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                const nIdx = ny * w + nx;
+                minAlpha = Math.min(minAlpha, alphaData[nIdx]);
+              }
+            }
+          }
+          
+          // Apply eroded alpha
+          data[idx * 4 + 3] = minAlpha;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Create new bitmap from cleaned canvas
+      const cleanedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const cleanedBitmap = await createImageBitmap(cleanedBlob);
+      
       img.processedCanvas = canvas;
-      img.bitmap = bitmap;
+      img.bitmap = cleanedBitmap;
 
       applyBackground(img);
       img.status = 'done';
