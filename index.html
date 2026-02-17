@@ -479,8 +479,8 @@
         alphaData[i / 4] = data[i + 3];
       }
       
-      // Erode alpha channel by 1-2 pixels to remove edge glow
-      const erosionRadius = 2;
+      // Erode alpha channel by 1 pixel to remove edge glow
+      const erosionRadius = 1;
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           const idx = y * w + x;
@@ -560,9 +560,9 @@
     
     ctx.putImageData(imageData, 0, 0);
     
-    // Apply #D4CCB9 overlay with "plus darker" blend at 10% opacity
+    // Apply #D4CCB9 overlay with "plus darker" blend at 20% opacity
     ctx.globalCompositeOperation = 'darken';
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = 0.2;
     ctx.fillStyle = '#D4CCB9';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1.0;
