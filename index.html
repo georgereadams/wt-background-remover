@@ -560,8 +560,8 @@
     
     ctx.putImageData(imageData, 0, 0);
     
-    // Apply #D4CCB9 overlay with "plus darker" blend at 20% opacity
-    ctx.globalCompositeOperation = 'darken';
+    // Apply #D4CCB9 overlay with multiply blend at 20% opacity
+    ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = 0.2;
     ctx.fillStyle = '#D4CCB9';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -647,10 +647,34 @@
     // progress bar removed - no op
   }
 
-  downloadAllBtn.addEventListener('click', () => {
-    images.filter(i => i.status === 'done').forEach((img, i) => {
-      setTimeout(() => downloadImage(img), i * 300);
-    });
+  downloadAllBtn.addEventListener('click', async () => {
+    const done = images.filter(i => i.status === 'done');
+    if (done.length === 0) return;
+    
+    if (done.length === 1) {
+      downloadImage(done[0]);
+      return;
+    }
+
+    // Import JSZip for creating ZIP files
+    const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
+    const zip = new JSZip();
+    
+    // Add all images to ZIP
+    for (const img of done) {
+      // Convert data URL to blob
+      const response = await fetch(img.processedUrl);
+      const blob = await response.blob();
+      const filename = img.name.replace(/\.[^.]+$/, '') + '_nobg.png';
+      zip.file(filename, blob);
+    }
+    
+    // Generate and download ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(zipBlob);
+    a.download = 'portraits_nobg.zip';
+    a.click();
   });
 
   clearBtn.addEventListener('click', () => {
